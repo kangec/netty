@@ -26,6 +26,7 @@ public class ChineseProverServer {
     }
 
     public static void main(String[] args) {
-
+        ChineseProverServer server = new ChineseProverServer();
+        server.run(9021);
     }
 }

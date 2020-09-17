@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Netty 时间服务器</title>
+</head>
+<script type="text/javascript">
+    var socket;
+
+    if ("WebSocket" in window) {
+        socket = new WebSocket("ws://localhost:8081/websocket");
+        socket.onmessage = function (event) {
+            var resp = document.getElementById("resp");
+            resp.value = "";
+            resp.value = event.data;
+        }
+        socket.onopen = function (event) {
+            var resp = document.getElementById("resp");
+            resp.value = "连接正常";
+        }
+        socket.close = function (event) {
+            var resp = document.getElementById("resp");
+            resp.value = "连接关闭";
+        }
+    }else {
+        alert("不支持WebSocket")
+    }
+
+    function send(message) {
+        if (!window.WebSocket) return;
+        if (socket.readyState == WebSocket.OPEN) {
+            socket.send(message)
+        }else {
+            alert("连接未建立")
+        }
+    }
+</script>
+<body>
+<form onsubmit="return false">
+    <input type="text" name="message" value="Netty"><br>
+    <input type="button" onclick="send(this.form.message.value)" value="发送"><br>
+    <hr color="blue"/>
+    <h3>服务器返回消息</h3>
+    <textarea id="resp" style="width: 500px;height: 300px"></textarea>
+</form>
+
+</body>
+
+</html>

@@ -2,10 +2,7 @@ package websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.CharsetUtil;
@@ -13,6 +10,7 @@ import io.netty.util.concurrent.EventExecutorGroup;
 
 import java.util.Date;
 
+import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import static io.netty.handler.codec.http.HttpUtil.setContentLength;
 
 public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> {
@@ -55,11 +53,11 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     }
 
     private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) {
-        if (!request.decoderResult().isSuccess() || ("websocket".equals(request.headers().get("Upgrade")))) {
+        if (!request.decoderResult().isSuccess() || (!"websocket".equals(request.headers().get("Upgrade")))) {
             sendHttpResponse(ctx, request, new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
             return;
         }
-        WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory("ws://localhost:8090/websocket", null, false);
+        WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory("ws://127.0.0.1:8081/websocket", null, false);
         handshaker = factory.newHandshaker(request);
         if (handshaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
@@ -74,6 +72,11 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             response.content().writeBytes(buffer);
             buffer.release();
             setContentLength(response, response.content().readableBytes());
+        }
+
+        ChannelFuture future = ctx.channel().writeAndFlush(response);
+        if (isKeepAlive(request) || response.status().code() != 200) {
+            future.addListener(ChannelFutureListener.CLOSE);
         }
     }
 
